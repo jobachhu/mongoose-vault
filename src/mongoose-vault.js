@@ -185,8 +185,13 @@ var mongooseVault = function (schema, options) {
     let objectToDecrypt = pick(this, encryptedFields, {excludeUndefinedValues: true})
     let batchInput = toBatchObject(objectToDecrypt, encryptedFields, 'ciphertext')
     if (batchInput.length > 0) {
-      let decryptionResponse = await vault.write('transit/decrypt/' + encryptionKeyName, Object.assign({ batch_input: batchInput }, keyCreationDefaults))
-      assignFromBatchObject(this, decryptionResponse.data.batch_results, encryptedFields, 'plaintext')
+      try {
+        let decryptionResponse = await vault.write('transit/decrypt/' + encryptionKeyName, Object.assign({batch_input: batchInput}, keyCreationDefaults))
+        assignFromBatchObject(this, decryptionResponse.data.batch_results, encryptedFields, 'plaintext')
+      } catch (e) {
+        e.entityId = this._id;
+        throw e
+      }
     }
   }
 }
